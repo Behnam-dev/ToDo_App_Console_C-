@@ -39,3 +39,4 @@ E:\C#\To_do_console\bin\Debug\net9.0\runtimes\win-x64\native\e_sqlite3.dll
 E:\C#\To_do_console\bin\Debug\net9.0\runtimes\win-x86\native\e_sqlite3.dll
 E:\C#\To_do_console\obj\Debug\net9.0\To_do_console.csproj.AssemblyReference.cache
 E:\C#\To_do_console\obj\Debug\net9.0\To_do_co.F623AA28.Up2Date
+E:\C#\To_do_console\obj\Debug\net9.0\To_do_console.sourcelink.json
