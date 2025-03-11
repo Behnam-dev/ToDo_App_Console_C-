@@ -10,6 +10,12 @@ namespace TD
         {
             Console.BackgroundColor = ConsoleColor.DarkMagenta;
             Console.OutputEncoding = System.Text.Encoding.UTF8; // To properly show emojis
+        try
+        {
+            Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
+        }
+        catch (IOException){}
+
             Console.Clear();
 
             Connect_To_db();
@@ -20,22 +26,81 @@ namespace TD
         }
         public static void Menu()
         {
-            Console.WriteLine("\n\t\t\t\t\t\t*** Todo List ***");
-            Console.WriteLine("\n\t\t\t\t\t\t[1] Create Task\t\t\t "+ "⚫️"+ DateTime.Today.ToShortDateString()+ "\n\t\t\t\t\t\t[2] Delete Task\n\n\n\t\t\t");
-            Print_Tasks();
+            Console.WriteLine("\n\n\t\t\t\t*** Todo List ***");
+            Console.WriteLine("\n\n\t\t\t\t🌀 Create Task\t\t\t "+ "🗓   "+ DateTime.Today.ToShortDateString());
+            int count = Print_Tasks();
+            // while(true)
+            // {
+            //     var key = Console.ReadKey(true);
+            //     switch(key.Key)
+            //     {
+            //         case ConsoleKey.D1:
+            //             Create_Task();
+            //             return;
+            //         case ConsoleKey.D2:
+            //             Delete_Task();
+            //             return;
+            //         default:
+            //             break; 
+            //     }
+            // }
+            int row = 5;
+            Console.SetCursorPosition(26, row);
+            Console.Write("➡️");
             while(true)
             {
                 var key = Console.ReadKey(true);
                 switch(key.Key)
                 {
-                    case ConsoleKey.D1:
-                        Create_Task();
+                    case ConsoleKey.UpArrow:
+                        if (row != 5)
+                        {
+                            Console.SetCursorPosition(26, row); // Delete the current arrow
+                            Console.Write(" ");                 //
+                            row = row-3;
+                            Console.SetCursorPosition(26, row); // Set new arrow
+                            Console.Write("➡️");
+                        }
+                        break;
+                    case ConsoleKey.DownArrow:
+                        if (row != 5+(count*3))
+                        {
+                            Console.SetCursorPosition(26, row); 
+                            Console.Write(" ");                 
+                            row = row+3;
+                            Console.SetCursorPosition(26, row); // Set new arrow
+                            Console.Write("➡️");
+                        }
+                        break;
+                    case ConsoleKey.Delete:
+                        Query_Delete((row-5)/3);
+                        // Query_Delete(1);
+                        Console.Clear();
                         return;
-                    case ConsoleKey.D2:
-                        Delete_Task();
-                        return;
+                    case ConsoleKey.Enter:
+                        if (row==5)
+                        {
+                            Create_Task();
+                            return;
+                        }
+                        else
+                        {
+                            bool check = Done_Check_Task((row-5)/3);
+                            Console.SetCursorPosition(32,row);
+                            if (check)
+                            {
+                                Console.Write("🔲");
+                            }
+                            else
+                            {
+                                Console.Write("☑️");
+                            }
+                            Console.SetCursorPosition(26, row);
+                        }
+                        Change_Done((row-5)/3);
+                        break;
                     default:
-                        break; 
+                        break;
                 }
             }
         }
@@ -54,8 +119,9 @@ namespace TD
                 command.ExecuteNonQuery();   
             }
         }
-        public static void Print_Tasks()
+        public static int Print_Tasks()
         {
+            int count = 0;
             using(var connection = new SqliteConnection("Data Source=tasks.db"))
             {
                 connection.Open();
@@ -65,14 +131,23 @@ namespace TD
                 {
                     while(reader.Read())
                     {
+                        count++;
                         var title = reader["title"].ToString();
                         var date = reader["date"].ToString();
                         var done = reader["done"];
-                        Console.WriteLine("\n\n\t\t\t\t" + "⚫️" + title + "\t" + "Date: "+ date + "  🔲");
+                        if (Convert.ToInt32(reader["done"]) != 0)
+                        {
+                        Console.WriteLine("\n\n\t\t\t\t" + "☑️  " + title + "\t" + "Date: "+ date);
+                        }
+                        else
+                        {
+                        Console.WriteLine("\n\n\t\t\t\t" + "🔲  " + title + "\t" + "Date: "+ date);
+                        }
                     }
                 }
                 command.ExecuteNonQuery(); 
             }
+            return count;
         }
 
         public static void Create_Task()
@@ -96,7 +171,6 @@ namespace TD
                     else if(date.Length > 5)
                     {
                         throw new Exception();
-                        // Console.WriteLine("\nPlease enter a date in this format \"3 26\"");
                     }
                     
                     foreach(char ch in date)
@@ -130,79 +204,6 @@ namespace TD
             return;
         }
 
-        public static void Delete_Task()
-        {
-            Console.Clear();
-            Console.WriteLine("\n\t\t\t\tSelect the task and press Enter to delete. Backspace to return");
-            using(var connection = new SqliteConnection("Data Source=tasks.db"))
-            {   
-                int count = 0;
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT * FROM tasks";
-                using(var reader = command.ExecuteReader())
-                {
-                    while(reader.Read())
-                    {
-                        count ++ ;
-                        var title = reader["title"].ToString();
-                        var date = reader["date"].ToString();
-                        var done = reader["done"];
-                        Console.WriteLine("\n\n\t\t\t\t" + "⚫️" + title + "\t" + "Date: "+ date);
-                    }
-                }
-                if (count == 0)
-                {
-                    Console.WriteLine("\t\t\tYou have no tasks yet :) Create a task by pressing 1 in the main menu");
-                    Thread.Sleep(3000);
-                    return;
-                }
-                else
-                {
-                    int row = 4;
-                    Console.SetCursorPosition(26, row);
-                    Console.Write("➡️");
-                    while(true)
-                    {
-                        var key = Console.ReadKey(true);
-                        switch(key.Key)
-                        {
-                            case ConsoleKey.UpArrow:
-                                if (row != 4)
-                                {
-                                    Console.SetCursorPosition(26, row); // Delete the current arrow
-                                    Console.Write(" ");                 //
-                                    row = row-3;
-                                    Console.SetCursorPosition(26, row); // Set new arrow
-                                    Console.Write("➡️");
-                                }
-                                break;
-                            case ConsoleKey.DownArrow:
-                                if (row != (1+(count))*3)
-                                {
-                                    Console.SetCursorPosition(26, row); // Delete the current arrow
-                                    Console.Write(" ");                 //
-                                    row = row+3;
-                                    Console.SetCursorPosition(26, row); // Set new arrow
-                                    Console.Write("➡️");
-                                }
-                                break;
-                            case ConsoleKey.Enter:
-                                Query_Delete((row-1)/3);
-                                // Query_Delete(1);
-                                Console.Clear();
-                                return;
-                            case ConsoleKey.Backspace:
-                                Console.Clear();
-                                return;
-                            default:
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
         public static void Query_Delete(int index)
         {
             using(var connection = new SqliteConnection("Data Source=tasks.db"))
@@ -222,6 +223,62 @@ namespace TD
                             del_command.CommandText = "DELETE FROM tasks WHERE id=@id";
                             del_command.Parameters.AddWithValue("@id", reader["id"]);
                             del_command.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+        }
+
+        public static bool Done_Check_Task(int index)
+        {
+            using(var connection = new SqliteConnection("Data Source=tasks.db"))
+            {   
+                int count = 0;
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT * FROM tasks";
+                using(var reader = command.ExecuteReader())
+                {
+                    while(reader.Read())
+                    {
+                        count ++ ;
+                        if (count==index)
+                        {
+                            return Convert.ToInt32(reader["done"]) != 0;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static void Change_Done(int index)
+        {
+            using(var connection = new SqliteConnection("Data Source=tasks.db"))
+            {   
+                int count = 0;
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT * FROM tasks";
+                using(var reader = command.ExecuteReader())
+                {
+                    while(reader.Read())
+                    {
+                        count ++ ;
+                        if (count==index)
+                        {
+                            var update_command = connection.CreateCommand();
+                            update_command.CommandText = "UPDATE tasks SET done = @status WHERE id=@id";
+                            if (Convert.ToInt32(reader["done"]) != 0)
+                            {
+                                update_command.Parameters.AddWithValue("@status",false);
+                            }
+                            else
+                            {
+                                update_command.Parameters.AddWithValue("@status",true);
+                            }
+                            update_command.Parameters.AddWithValue("@id",reader["id"]);
+                            update_command.ExecuteNonQuery();
                         }
                     }
                 }
